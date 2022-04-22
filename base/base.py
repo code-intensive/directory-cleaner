@@ -11,7 +11,7 @@ class BaseCleaner:
     DEFAULT_BASE_DIR = Path(__file__).absolute().parent.parent
     EMPTY = ''
     BASE_DIR = EMPTY
-    _VALID_OPTIONS = ('1', '2')
+    VALID_OPTIONS = (1, 2)
     ERROR_DICT = {
         '_404_ERROR': ('%s is not a valid file path on your machine,\n'
                        'Kindly review path provided and ensure there is no typo'),
@@ -97,11 +97,30 @@ class BaseCleaner:
             'is_validated': True,
             'message': 'Internal checks ran successfully',
         }
+        
+    def _convert_valid_options_to_string(cls) -> str | None:
+        # Ensure the VALID_OPTIONS property was not tampered with
+        if len(cls.VALID_OPTIONS) < 1:
+            raise ValueError(
+                'VALID_OPTIONS must be decalred'
+                'or left to the default'
+                'It can not be empty'
+            )
+        # Convert all options to string irrespective of their original type
+        cls.VALID_OPTIONS = tuple(map(lambda option: str(option), cls.VALID_OPTIONS))
+        if len(cls.VALID_OPTIONS) == 2:
+            return '%s or %s' % (cls.VALID_OPTIONS[0], cls.VALID_OPTIONS[1])
+        # Format to look like this:
+        # If a tuple containing 4 elements was passed in say we had
+        # (1, 2, 3, 4), our output would be a string object
+        # whose value would be like this: 1, 2, 3 or 4
+        return ', '.join(cls.VALID_OPTIONS[:-1]) + ', or %s' % cls.VALID_OPTIONS[-1]
 
     def __get_feedback__(cls, info: str, yes: FunctionType, no: FunctionType = lambda: exit(0), no_of_trials: int = 3) -> None:
         # Set VERBOSE to True so as to display info to stdout
         # via the __separate_msg__ function
         cls.VERBOSE = True
+        options_string = cls._convert_valid_options_to_string()
         options = '\n1) Yes\n2) No\n>>> '
         # Display the info before iteration begins
         # to avoid unnecessary display of info
@@ -114,22 +133,22 @@ class BaseCleaner:
                 # for a total of (no_of_trials - 1) times
                 options = 'This is your last trial' + options
             feedback = input(options)
-            if feedback not in cls._VALID_OPTIONS:
+            if feedback not in cls.VALID_OPTIONS:
                 # Do not display this during final iteration
                 if not final_trial:
                     cls.__separate_msg__(
-                        F'Provided option "{feedback}" is invalid, Only valid options are 1 and 2')
-                    print('Choose an option [1 or 2]')
+                        'Provided option "%s" is invalid, Kindly input one of the following %s'%(feedback, options_string))
+                    print('Choose an option, %s' % options_string)
                 continue
 
             if feedback == '1':
                 cls.__separate_msg__(
-                    F'Defaulting to {cls.DEFAULT_BASE_DIR} as BASE_DIR')
+                    'Defaulting to %s as BASE_DIR' % cls.DEFAULT_BASE_DIR)
                 yes()
                 return
 
             if feedback == '2':
-                cls.__separate_msg__('Exiting...')
+                cls.__separate_msg__('Exiting application...')
                 no()
         # If code executes to this point it means all
         # attempts to get valid feedback from the user
@@ -167,7 +186,7 @@ class BaseCleaner:
                 lambda discovered_path: not discovered_path.match(r'*\.*'), discovered_paths)
 
         if self.VERBOSE:
-            header = F'Path(s) discovered at {self.BASE_DIR}'
+            header = 'Path(s) discovered at %s' % self.BASE_DIR
             dir_only_msg = 'Displaying directories only' if directory_only else ''
             msg = '\n'.join(
                 list(map(lambda discovered_path: discovered_path.__str__(), discovered_paths)))
@@ -208,10 +227,10 @@ class BaseCleaner:
         if self.VERBOSE:
             if is_validated:
                 header = 'Validation of new BASE_DIR was successful'
-                footer = F'BASE_DIR is now set to:\n{self.BASE_DIR}'
+                footer = 'BASE_DIR is now set to:\n%s' % self.BASE_DIR
             else:
-                header = F'Validation of {field_name} failed...'
-                footer = F'Reverting to previously valid BASE_DIR\n{TEMP_BASE_DIR}'
+                header = 'Validation of %s failed...' % field_name
+                footer = 'Reverting to previously valid BASE_DIR\n%s' % TEMP_BASE_DIR
                 # Upon failure fall back to previous BASE_DIR
                 self.BASE_DIR = TEMP_BASE_DIR
             self.__separate_msg__(header, self.EMPTY,
@@ -221,11 +240,12 @@ class BaseCleaner:
     # this class we override the "__new__" dunder method
     def __new__(cls, base_dir: Path | str = None, *args, **kwargs):
         # Check if an instance exists,
-        # if not we instantiate one by calling
+        # if none exists we instantiate one by calling
         # the super method of the object class
         if not hasattr(cls, 'instance'):
             cls.instance = super(BaseCleaner, cls).__new__(cls)
         return cls.instance
 
 
-c = BaseCleaner()
+if __name__ == '__main__':
+    c = BaseCleaner()
