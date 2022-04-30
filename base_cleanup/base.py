@@ -39,7 +39,7 @@ class BaseCleaner:
         # or properties before cleaning commences
         self.__run_checks__()
 
-    def __run_checks__(self, fail_silently=False) -> dict | None:
+    def __run_checks__(self, fail_silently=False) -> dict:
         """
 
         Checks the internal state of this object,
@@ -116,7 +116,8 @@ class BaseCleaner:
         # whose value would be like this: 1, 2, 3 or 4
         return ', '.join(cls.VALID_OPTIONS[:-1]) + ', or %s' % cls.VALID_OPTIONS[-1]
 
-    def __get_feedback__(cls, info: str, yes: FunctionType, no: FunctionType = lambda: exit(0), no_of_trials: int = 3) -> None:
+    def __get_feedback__(cls, info: str, yes: FunctionType,
+                        no: FunctionType = lambda: exit(0), no_of_trials: int = 3) -> None:
         # Set VERBOSE to True so as to display info to stdout
         # via the __separate_msg__ function
         cls.VERBOSE = True
@@ -137,7 +138,9 @@ class BaseCleaner:
                 # Do not display this during final iteration
                 if not final_trial:
                     cls.__separate_msg__(
-                        'Provided option "%s" is invalid, Kindly input one of the following %s'%(feedback, options_string))
+                        'Provided option "%s" is invalid,',
+                        'Kindly input one of the following %s'%(feedback, options_string)
+                    )
                     print('Choose an option, %s' % options_string)
                 continue
 
@@ -193,7 +196,7 @@ class BaseCleaner:
             self.__separate_msg__(header, dir_only_msg, msg)
         return discovered_paths
 
-    async def remove_files(self, dir: Path, pattern: str) -> int:
+    def remove_files(self, file_path: Path) -> int:
         pass
 
     def set_base_dir(self, base_dir: Path | str, *, run_checks: bool = False) -> None:
@@ -245,7 +248,3 @@ class BaseCleaner:
         if not hasattr(cls, 'instance'):
             cls.instance = super(BaseCleaner, cls).__new__(cls)
         return cls.instance
-
-
-if __name__ == '__main__':
-    c = BaseCleaner()
